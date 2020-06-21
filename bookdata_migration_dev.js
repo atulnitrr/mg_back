@@ -149,6 +149,8 @@ async function fetchData(booking_id) {
     responseStatus.isPresent = false;
     responseStatus.status = "FAILURE";
     responseStatus.remark = JSON.stringify(error);
+    console.log("fetch data error ");
+    console.log(error);
   }
 
   return responseStatus;
@@ -238,16 +240,21 @@ function getBookDataRequest(mysqlData, booking_id) {
   return bookDataRequest;
 }
 
-(async function () {
+const startMsg = "";
+let processMessage = "Hell process message";
+let allMessage = [];
+
+const startMigration = async () => {
   const csvData = [];
   const allBookingId = await getBookingIdFromExcel();
-
   for (let i = 0; i < allBookingId.length; i++) {
     const csvRowValue = new CsvRowValue();
     const booking_id = allBookingId[i].booking_id;
     csvRowValue.booking_id = booking_id;
     try {
-      console.log("processig for booking id " + booking_id);
+      processMessage = "processig for booking id " + booking_id;
+      console.log(processMessage);
+      allMessage.push(processMessage);
       const fetchDataResponse = await fetchData(booking_id);
       if (fetchDataResponse.isPresent) {
         let bookDataRequest = getBookDataRequest(
@@ -265,37 +272,51 @@ function getBookDataRequest(mysqlData, booking_id) {
           );
           csvRowValue.status = migrateDataResponse.status;
           csvRowValue.remark = migrateDataResponse.remark;
-          console.log("migration done for booking id " + booking_id);
+          processMessage = "migration done for booking id " + booking_id;
+          console.log(processMessage);
+          allMessage.push(processMessage);
         } else if (mongoDataResponse.isBadRequest) {
           csvRowValue.status = "BAD REQUEST";
           csvRowValue.remark = mongoDataResponse.remark;
+          processMessage = `migration failure bad request ${booking_id}  ${mongoDataResponse.remark}`;
           console.log(
-            `migration failure bad request ${mongoDataResponse.remark}`
+            `migration failure bad request ${booking_id}  ${mongoDataResponse.remark}`
           );
+          allMessage.push(processMessage);
         } else {
           csvRowValue.status = "ALREADY PRESENT";
           csvRowValue.remark = mongoDataResponse.remark;
+          processMessage = `migration failure ${booking_id} already present ${mongoDataResponse.remark}`;
           console.log(
-            `migration failure  already present ${mongoDataResponse.remark}`
+            `migration failure ${booking_id} already present ${mongoDataResponse.remark}`
           );
+          allMessage.push(processMessage);
         }
       } else {
         csvRowValue.status = "FAILURE";
         csvRowValue.remark = fetchDataResponse.remark;
-        console.log(`migration failure   ${fetchDataResponse.remark}`);
+        processMessage = `migration failure ${booking_id}  ${fetchDataResponse.remark}`;
+        allMessage.push(processMessage);
+        console.log(
+          `migration failure  ${booking_id}  ${fetchDataResponse.remark}`
+        );
       }
     } catch (error) {
+      processMessage = "processig failure for booking id " + booking_id;
+      allMessage.push(processMessage);
       console.log("processig failure for booking id " + booking_id);
       console.log(error);
       csvRowValue.status = "FAILURE";
       csvRowValue.remark = JSON.stringify(error);
     }
+    processMessage = "---------";
+    allMessage.push(processMessage);
     console.log("-------------");
     csvData.push(csvRowValue);
   }
   await writeResultToCSV(csvData);
   await writeResultToCSV(creditShellData);
-})();
+};
 
 function getFileNameSuffix() {
   const currentDate = new Date();
@@ -306,6 +327,4 @@ function getFileNameSuffix() {
   }`;
 }
 
-export function testData() {
-  console.log("test function ");
-}
+module.exports = { startMigration, allMessage };
