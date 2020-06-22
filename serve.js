@@ -5,6 +5,7 @@ const {
 } = require("./bookdata_migration_dev");
 const cors = require("cors");
 const fileUpload = require("express-fileupload");
+const bodyParser = require("body-parser");
 
 const express = require("express");
 const expressApp = express();
@@ -17,7 +18,10 @@ const corsOptions = {
     callback(new Error("Not allowed by CORS"));
   },
 };
-expressApp.use(cors(corsOptions));
+
+expressApp.use(bodyParser.json());
+// expressApp.use(cors(corsOptions));
+expressApp.use(cors());
 expressApp.use(fileUpload());
 expressApp.use(express.static(__dirname + "/node_modules"));
 const expressServer = expressApp.listen("3033", () => {
@@ -37,7 +41,24 @@ expressApp.get("/test", (req, res, next) => {
 
 expressApp.get("/startmigration", (req, res, next) => {
   console.log("starting migration");
-  startMigration();
+  startMigration()
+    .then((migResponse) => {
+      return res.json({ fileName: migResponse });
+    })
+    .catch((error) => {
+      return res.status(500).send(error);
+    });
+});
+
+expressApp.post("/downloadFile", (req, res, next) => {
+  let filepath = req.body.data.fileName;
+  console.log(req.body.data.fileName);
+  const ff =
+    "/Users/mmt8210/Desktop/pnr/mig_Data/BOOK_DATA_MIG_17JUNE_output.csv";
+  res.sendFile(filepath, (error) => {
+    console.log("error hallpendn  ", error);
+    return res.status(500).send(error);
+  });
 });
 
 expressApp.post("/uploadFile", (req, res, next) => {

@@ -238,7 +238,7 @@ let allMessage = [];
 const startMigration = async () => {
   let OUTPUT_FILE_PATH = `${currentFilePath}_output_${getFileNameSuffix()}.csv`;
 
-  OUTPUT_FILE_PATH = `${currentFilePath}_output.csv`;
+  // OUTPUT_FILE_PATH = `${currentFilePath}_output.csv`;
 
   const csvData = [];
   const allBookingId = await getBookingIdFromExcel();
@@ -308,11 +308,9 @@ const startMigration = async () => {
     console.log("-------------");
     csvData.push(csvRowValue);
   }
-  console.log("creditShellData --------");
-  console.log(creditShellData);
   await writeResultToCSV([...csvData, ...creditShellData], OUTPUT_FILE_PATH);
   // await writeResultToCSV(creditShellData);
-  return { fileName: "Datatt" };
+  return OUTPUT_FILE_PATH;
 };
 
 function getFileNameSuffix() {
