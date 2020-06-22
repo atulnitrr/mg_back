@@ -36,7 +36,7 @@ expressApp.get("/test", (req, res, next) => {
 });
 
 expressApp.get("/startmigration", (req, res, next) => {
-  console.log("start mig");
+  console.log("starting migration");
   startMigration();
 });
 

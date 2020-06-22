@@ -18,10 +18,6 @@ const currentFilePath = INPUT_FILE_PATH.substring(
   INPUT_FILE_PATH.lastIndexOf(".")
 );
 
-let OUTPUT_FILE_PATH = `${currentFilePath}_output_${getFileNameSuffix()}.csv`;
-
-OUTPUT_FILE_PATH = `${currentFilePath}_output.csv`;
-
 const BOOK_DATA_BASE_URL_DEV = `http://localhost:8080/flights-pnr-service/v2/getAllByIdSource`;
 //10.66.39.17:8004/flights-booking/v1/bookJson?mmtId=NF70114276514898
 
@@ -31,7 +27,7 @@ const GET_DATA_BASE_URL_STAGING = `http://10.66.39.115:8004/flights-booking/v1/b
 const UPLOAD_DATA_URL_DEV =
   "http://localhost:8080/flights-pnr-service/v2/bookdata-internal";
 
-const creditShellData = [];
+let creditShellData = new Set();
 
 class ResponseStatus {
   constructor(isPresent, status, remark, data) {
@@ -51,16 +47,6 @@ class BookDataRequest {
   }
 }
 
-const csvWriter = createCsvWriter({
-  path: OUTPUT_FILE_PATH,
-  header: [
-    { id: "booking_id", title: "booking_id" },
-    { id: "source", title: "source" },
-    { id: "status", title: "status" },
-    { id: "remark", title: "remark" },
-  ],
-});
-
 class CsvRowValue {
   constructor(booking_id, source, status, remark) {
     this.booking_id = booking_id;
@@ -70,13 +56,22 @@ class CsvRowValue {
   }
 }
 
-async function writeResultToCSV(records) {
+async function writeResultToCSV(records, filePath) {
   try {
+    const csvWriter = createCsvWriter({
+      path: filePath,
+      header: [
+        { id: "booking_id", title: "booking_id" },
+        { id: "source", title: "source" },
+        { id: "status", title: "status" },
+        { id: "remark", title: "remark" },
+      ],
+    });
     await csvWriter.writeRecords(records);
-    // console.log("succesfull written to csv file ", JSON.stringify(records));
-    console.log("succesfully written to csv file ");
+    creditShellData.clear();
+    console.log("succesfully written to csv file " + filePath);
   } catch (error) {
-    console.log("Could not wrie to csv file ", error);
+    console.log("Could not wrie to csv file " + filePath, error);
   }
 }
 
@@ -139,7 +134,7 @@ async function fetchData(booking_id) {
       responseStatus.isPresent = true;
       responseStatus.status = "SUCCESS";
       responseStatus.data = data;
-      addCreditShellBookingId(data);
+      await addCreditShellBookingId(data);
     } else {
       responseStatus.isPresent = false;
       responseStatus.status = "FAILURE";
@@ -156,7 +151,7 @@ async function fetchData(booking_id) {
   return responseStatus;
 }
 
-function addCreditShellBookingId(data) {
+async function addCreditShellBookingId(data) {
   if (
     data !== undefined &&
     data.bookingInfo !== undefined &&
@@ -170,11 +165,7 @@ function addCreditShellBookingId(data) {
     csvRowValue.source = data.metaData.source.trim();
     csvRowValue.status = "CREDIT_SHELL";
     csvRowValue.remark = `migrate this booking_id, its parent booking_id ${data.metaData.bookingId}`;
-    creditShellData.push(csvRowValue);
-    // creditShellData.push({
-    //   booking_id: data.bookingInfo.frInfo.bookingFareInfo.creditShellData.bkId.trim(),
-    //   source: data.metaData.source.trim(),
-    // });
+    creditShellData.add(csvRowValue);
   }
 }
 
@@ -245,6 +236,10 @@ let processMessage = "Hell process message";
 let allMessage = [];
 
 const startMigration = async () => {
+  let OUTPUT_FILE_PATH = `${currentFilePath}_output_${getFileNameSuffix()}.csv`;
+
+  OUTPUT_FILE_PATH = `${currentFilePath}_output.csv`;
+
   const csvData = [];
   const allBookingId = await getBookingIdFromExcel();
   for (let i = 0; i < allBookingId.length; i++) {
@@ -313,8 +308,11 @@ const startMigration = async () => {
     console.log("-------------");
     csvData.push(csvRowValue);
   }
-  await writeResultToCSV(csvData);
-  await writeResultToCSV(creditShellData);
+  console.log("creditShellData --------");
+  console.log(creditShellData);
+  await writeResultToCSV([...csvData, ...creditShellData], OUTPUT_FILE_PATH);
+  // await writeResultToCSV(creditShellData);
+  return { fileName: "Datatt" };
 };
 
 function getFileNameSuffix() {
