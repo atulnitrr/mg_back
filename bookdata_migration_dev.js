@@ -309,8 +309,7 @@ const startMigration = async () => {
       csvRowValue.status = "FAILURE";
       csvRowValue.remark = JSON.stringify(error);
     }
-    processMessage = "---------";
-    allMessage.push(processMessage);
+
     console.log("-------------");
     csvData.push(csvRowValue);
   }

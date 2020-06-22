@@ -59,36 +59,23 @@ expressApp.post("/uploadFile", (req, res, next) => {
   }
 });
 
-io.on("connection", (client) => {
-  let i = 0;
-  console.log("client connected in  migration");
-  client.on("join", (data) => {
-    console.log("data value " + data);
+// io.on("connection", (client) => {
+//   let i = 0;
+//   console.log("client connected in  migration");
+//   client.on("join", (data) => {
+//     console.log("data value " + data);
+//     var interval = setInterval(() => {
+//       console.log("allmessage");
+//       console.log(allMessage);
+//       while (allMessage.length > 0) {
+//         let value = allMessage.shift();
+//         client.emit("fromServer", value);
+//       }
+//     }, 3000);
 
-    // if (allMessage.length > 0) {
-    //   client.emit("fromServer", "dddd");
-    // }
-
-    var interval = setInterval(() => {
-      console.log(allMessage);
-
-      while (allMessage.length > 0) {
-        client.emit("fromServer", allMessage.shift());
-      }
-
-      if (allMessage.length > 0) {
-        console.log("all data ");
-        console.log(allMessage);
-        while (allMessage.length > 0) {
-          client.emit("fromServer", allMessage.shift());
-        }
-        // client.emit("fromServer", allMessage.shift());
-      }
-    }, 1000);
-
-    setTimeout(() => {
-      console.log("clear called ");
-      clearInterval(interval);
-    }, 60 * 1000);
-  });
-});
+//     setTimeout(() => {
+//       console.log("clear called ");
+//       clearInterval(interval);
+//     }, 60 * 1000);
+//   });
+// });
