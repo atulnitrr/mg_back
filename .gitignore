@@ -1,3 +1,6 @@
 node_modules/
+delete_cs_input_files/
+
 inputfiles/
+
 outputfiles/

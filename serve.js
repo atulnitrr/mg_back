@@ -3,6 +3,8 @@ const {
   processMessage,
   allMessage,
 } = require("./bookdata_migration_dev");
+
+const { deletCS } = require("./deletecs");
 const cors = require("cors");
 const fileUpload = require("express-fileupload");
 const bodyParser = require("body-parser");
@@ -10,6 +12,8 @@ const bodyParser = require("body-parser");
 const express = require("express");
 const expressApp = express();
 const whitelist = ["http://localhost:3000", "http://localhost:3021"];
+
+const DEELETE_CS_DIR = process.cwd() + "/delete_cs_input_files";
 const corsOptions = {
   credentials: true, // This is important.
   origin: (origin, callback) => {
@@ -100,3 +104,39 @@ expressApp.post("/uploadFile", (req, res, next) => {
 //     }, 60 * 1000);
 //   });
 // });
+
+// delete cs path
+
+expressApp.post("/upload_deletcs_file", (req, res, next) => {
+  if (!req.files || !Object.keys(req.files)) {
+    return res
+      .status(400)
+      .send({ status: "FAILURE", message: "No file uploaded" });
+  } else {
+    const uploadedFile = req.files.file;
+    uploadedFile.mv(`${DEELETE_CS_DIR}/${uploadedFile.name}`, (error) => {
+      if (error) {
+        return res.status(500).send({ status: "FAILURE", message: error });
+      } else {
+        return res.status(200).send({
+          status: "SUCCESS",
+          message: "SUCCESSFULLY UPLOADED",
+          fileName: uploadedFile.name,
+        });
+      }
+    });
+  }
+});
+
+expressApp.post("/deletecs", (req, res, next) => {
+  deletCS(`${DEELETE_CS_DIR}/${req.body.fileName}`)
+    .then((delRes) => {
+      return res.status(200).send(delRes);
+    })
+    .catch((error) => {
+      console.log(JSON.stringify(error));
+      return res
+        .status(500)
+        .send({ message: "Error whil delete " + JSON.stringify(error) });
+    });
+});
